@@ -1,0 +1,583 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "name": "URL Shortener API",
+    "description": "Complete Postman collection for the quant-url-shortener REST API.\n\n**Base URL:** `{{baseUrl}}` (default: http://localhost:8080)\n\n**Workflow tip:** Run \"Create Link (auto slug)\" first — it saves the returned `slug` to the `{{slug}}` collection variable for redirect, analytics, and delete requests.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "slug",
+      "value": "my-docs",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Checks API and PostgreSQL connectivity.\n\n**200:** `{ status: \"ok\", db: \"connected\", uptime }`\n\n**503:** `{ status: \"degraded\", db: \"disconnected\", uptime }`"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 or 503', function () {",
+                  "    pm.expect([200, 503]).to.include(pm.response.code);",
+                  "});",
+                  "",
+                  "pm.test('Response has status field', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('status');",
+                  "    pm.expect(json).to.have.property('db');",
+                  "    pm.expect(json).to.have.property('uptime');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Links",
+      "item": [
+        {
+          "name": "Create Link (auto slug)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"target_url\": \"https://example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/links",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "links"]
+            },
+            "description": "Create a short link with an auto-generated 7-character slug (nanoid).\n\n**201:** `{ id, slug, target_url, short_url, created_at, expires_at }`\n\n**429:** Rate limited (POST only, default 20 req / 15 min)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response includes slug and short_url', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('slug');",
+                  "    pm.expect(json).to.have.property('short_url');",
+                  "    pm.expect(json).to.have.property('target_url', 'https://example.com');",
+                  "    pm.collectionVariables.set('slug', json.slug);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Link (custom slug & expiry)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"target_url\": \"https://example.com/docs\",\n  \"slug\": \"my-docs\",\n  \"expires_at\": \"2027-01-01T00:00:00.000Z\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/links",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "links"]
+            },
+            "description": "Create a link with a custom slug and optional expiry.\n\n**Slug rules:** 3–50 chars, alphanumeric + hyphens only.\n\n**expires_at:** ISO8601, must be in the future.\n\n**409:** Slug already taken."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('slug', pm.response.json().slug);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Links",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/links",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "links"]
+            },
+            "description": "Returns all links ordered by `created_at` DESC.\n\nEach item includes: `id`, `slug`, `target_url`, `click_count`, `created_at`, `expires_at`."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array', function () {",
+                  "    pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Link",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/links/{{slug}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "links", "{{slug}}"]
+            },
+            "description": "Delete a link by slug.\n\n**204:** Success (no body)\n\n**404:** `{ error: \"Link not found\" }`"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 204 or 404', function () {",
+                  "    pm.expect([204, 404]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Validation & Errors",
+          "item": [
+            {
+              "name": "400 — Missing target_url",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/links",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "links"]
+                },
+                "description": "Expect **400** `{ error, field: \"target_url\" }`"
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 400 Bad Request', function () {",
+                      "    pm.response.to.have.status(400);",
+                      "});",
+                      "",
+                      "pm.test('Field is target_url', function () {",
+                      "    pm.expect(pm.response.json().field).to.eql('target_url');",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "400 — Invalid target_url",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"target_url\": \"not-a-valid-url\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/links",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "links"]
+                },
+                "description": "Expect **400** `{ error, field: \"target_url\" }`"
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 400 Bad Request', function () {",
+                      "    pm.response.to.have.status(400);",
+                      "});",
+                      "",
+                      "pm.test('Field is target_url', function () {",
+                      "    pm.expect(pm.response.json().field).to.eql('target_url');",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "400 — Invalid slug characters",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"target_url\": \"https://example.com\",\n  \"slug\": \"bad slug!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/links",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "links"]
+                },
+                "description": "Expect **400** `{ error, field: \"slug\" }`"
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 400 Bad Request', function () {",
+                      "    pm.response.to.have.status(400);",
+                      "});",
+                      "",
+                      "pm.test('Field is slug', function () {",
+                      "    pm.expect(pm.response.json().field).to.eql('slug');",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "409 — Duplicate slug",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"target_url\": \"https://example.com\",\n  \"slug\": \"my-docs\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/links",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "links"]
+                },
+                "description": "Run after \"Create Link (custom slug & expiry)\" with the same slug.\n\nExpect **409** `{ error: \"Slug already taken\" }`"
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 409 Conflict', function () {",
+                      "    pm.response.to.have.status(409);",
+                      "});",
+                      "",
+                      "pm.test('Error message', function () {",
+                      "    pm.expect(pm.response.json().error).to.eql('Slug already taken');",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Redirect",
+      "item": [
+        {
+          "name": "Follow Redirect",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.x",
+                "description": "Recorded in click_events"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{slug}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{slug}}"]
+            },
+            "description": "Follows the 302 redirect to `target_url`. Increments `click_count` and inserts a `click_events` row.\n\nPostman follows redirects by default — the final response will be from the destination URL."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Redirect succeeded (2xx from destination or 302)', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 301, 302, 303, 307, 308]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Inspect 302 (no redirect follow)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.x"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{slug}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{slug}}"]
+            },
+            "description": "Returns the raw **302** with `Location` header. Does not follow the redirect.\n\nAlso increments click count and logs the click event."
+          },
+          "response": [],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 302 Found', function () {",
+                  "    pm.response.to.have.status(302);",
+                  "});",
+                  "",
+                  "pm.test('Location header is present', function () {",
+                  "    pm.response.to.have.header('Location');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "404 — Unknown slug",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/does-not-exist-xyz",
+              "host": ["{{baseUrl}}"],
+              "path": ["does-not-exist-xyz"]
+            },
+            "description": "Expect **404** `{ error: \"Link not found\" }`"
+          },
+          "response": [],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 404 Not Found', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Error message', function () {",
+                  "    pm.expect(pm.response.json().error).to.eql('Link not found');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "item": [
+        {
+          "name": "Get Link Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/links/{{slug}}/analytics",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "links", "{{slug}}", "analytics"]
+            },
+            "description": "Returns click analytics for a slug.\n\n**200:**\n```json\n{\n  \"slug\": \"...\",\n  \"total_clicks\": 42,\n  \"recent_clicks\": [\n    { \"clicked_at\": \"...\", \"user_agent\": \"...\" }\n  ]\n}\n```\n\n`recent_clicks` is limited to the 20 most recent events.\n\n**404:** `{ error: \"Link not found\" }`"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 or 404', function () {",
+                  "    pm.expect([200, 404]).to.include(pm.response.code);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Analytics shape', function () {",
+                  "        const json = pm.response.json();",
+                  "        pm.expect(json).to.have.property('slug');",
+                  "        pm.expect(json).to.have.property('total_clicks');",
+                  "        pm.expect(json).to.have.property('recent_clicks');",
+                  "        pm.expect(json.recent_clicks).to.be.an('array');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "404 — Analytics for unknown slug",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/links/does-not-exist-xyz/analytics",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "links", "does-not-exist-xyz", "analytics"]
+            },
+            "description": "Expect **404** `{ error: \"Link not found\" }`"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 404 Not Found', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
