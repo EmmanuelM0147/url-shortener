@@ -1,6 +1,17 @@
 import { Request, Response, NextFunction } from 'express';
 
 const SLUG_PATTERN = /^[a-zA-Z0-9-]+$/;
+const SLUG_MIN_LENGTH = 3;
+const SLUG_MAX_LENGTH = 20;
+
+function isValidHttpUrl(value: string): boolean {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
 
 export function validateCreateLink(req: Request, res: Response, next: NextFunction): void {
   const { target_url, slug, expires_at } = req.body as {
@@ -19,9 +30,7 @@ export function validateCreateLink(req: Request, res: Response, next: NextFuncti
     return;
   }
 
-  try {
-    new URL(target_url);
-  } catch {
+  if (!isValidHttpUrl(target_url)) {
     res.status(400).json({ error: 'target_url must be a valid URL', field: 'target_url' });
     return;
   }
@@ -32,8 +41,11 @@ export function validateCreateLink(req: Request, res: Response, next: NextFuncti
       return;
     }
 
-    if (slug.length < 3 || slug.length > 50) {
-      res.status(400).json({ error: 'slug must be between 3 and 50 characters', field: 'slug' });
+    if (slug.length < SLUG_MIN_LENGTH || slug.length > SLUG_MAX_LENGTH) {
+      res.status(400).json({
+        error: `slug must be between ${SLUG_MIN_LENGTH} and ${SLUG_MAX_LENGTH} characters`,
+        field: 'slug',
+      });
       return;
     }
 

@@ -1,6 +1,11 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { nanoid } from 'nanoid';
+import { customAlphabet } from 'nanoid';
 import { query } from '../db';
+
+const generateSlug = customAlphabet(
+  'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-',
+  7,
+);
 
 const router = Router();
 
@@ -36,7 +41,7 @@ export function createLink(req: Request, res: Response, next: NextFunction): voi
     expires_at?: string;
   };
 
-  const slug = customSlug ?? nanoid(7);
+  const slug = customSlug ?? generateSlug();
   const expiresAt = expires_at !== undefined ? new Date(expires_at) : null;
 
   query<LinkRow>(

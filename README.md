@@ -12,23 +12,23 @@ A REST API that creates short links, redirects with click tracking, and exposes 
 
 ## Setup (local with Docker)
 
-Requires [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine + Compose v2).
+1. Clone the repository.
+2. Copy `.env.example` to `.env`:
+   ```bash
+   cp .env.example .env
+   ```
+3. Fill in values in `.env` (defaults work for local Docker). Ensure `DATABASE_URL` uses the Docker service hostname `db`:
+   ```
+   DATABASE_URL=postgresql://user:password@db:5432/url_shortener
+   ```
+4. Start the stack:
+   ```bash
+   docker compose up --build
+   ```
 
-```bash
-git clone <repo-url>
-cd quant-url-shortener
-docker compose up --build
-```
-
-No `.env` file is required, sensible defaults are baked into `docker-compose.yml`. Migrations run automatically on startup before the server listens.
+Migrations run automatically on startup before the server begins listening.
 
 The API is available at `http://localhost:8080`.
-
-To override defaults (custom credentials, port, etc.), copy `.env.example` to `.env`, Compose reads it for variable substitution:
-
-```bash
-cp .env.example .env   # optional
-```
 
 ## Setup (local without Docker)
 
@@ -65,7 +65,7 @@ Create a short link.
 | Field | Required | Description |
 |-------|----------|-------------|
 | `target_url` | Yes | Destination URL |
-| `slug` | No | Custom slug (3–50 chars, alphanumeric + hyphens). Auto-generated if omitted. |
+| `slug` | No | Custom slug (3–20 chars, alphanumeric + hyphens). Auto-generated if omitted. |
 | `expires_at` | No | ISO8601 expiry datetime (must be in the future) |
 
 **Responses:** `201` created link, `400` validation error, `409` slug already taken, `429` rate limited.

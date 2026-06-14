@@ -97,6 +97,19 @@ describe('URL shortener API', () => {
       expect(mockQuery).not.toHaveBeenCalled();
     });
 
+    it('returns 400 when custom slug is too long', async () => {
+      const res = await request(app)
+        .post('/api/links')
+        .send({ target_url: 'https://example.com', slug: 'a'.repeat(21) })
+        .expect(400);
+
+      expect(res.body).toHaveProperty('error');
+      expect(res.body).toHaveProperty('field');
+      expect(res.body.error).toBe('slug must be between 3 and 20 characters');
+      expect(res.body.field).toBe('slug');
+      expect(mockQuery).not.toHaveBeenCalled();
+    });
+
     it('returns 409 when slug is already taken (mock DB unique violation)', async () => {
       const dbError = new DatabaseError('duplicate key value violates unique constraint', 0, 'error');
       dbError.code = '23505';
@@ -202,6 +215,44 @@ describe('URL shortener API', () => {
 
       expect(res.body).toHaveProperty('error');
       expect(res.body.error).toBe('Link expired');
+      expect(Object.keys(res.body)).toEqual(['error']);
+    });
+  });
+
+  describe('GET /api/links/:slug/analytics', () => {
+    it('returns 200 with analytics for an existing slug', async () => {
+      mockQuery
+        .mockResolvedValueOnce(mockQueryResult([{ slug: 'abc1234', click_count: 2 }]))
+        .mockResolvedValueOnce(
+          mockQueryResult([
+            {
+              clicked_at: new Date('2024-06-01T12:00:00.000Z'),
+              user_agent: 'curl/8.0',
+            },
+          ]),
+        );
+
+      const res = await request(app).get('/api/links/abc1234/analytics').expect(200);
+
+      expect(res.body).toEqual({
+        slug: 'abc1234',
+        total_clicks: 2,
+        recent_clicks: [
+          {
+            clicked_at: '2024-06-01T12:00:00.000Z',
+            user_agent: 'curl/8.0',
+          },
+        ],
+      });
+    });
+
+    it('returns 404 when slug does not exist', async () => {
+      mockQuery.mockResolvedValueOnce(mockQueryResult([], 0));
+
+      const res = await request(app).get('/api/links/missing/analytics').expect(404);
+
+      expect(res.body).toHaveProperty('error');
+      expect(res.body.error).toBe('Link not found');
       expect(Object.keys(res.body)).toEqual(['error']);
     });
   });

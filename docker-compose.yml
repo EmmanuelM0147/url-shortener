@@ -2,7 +2,9 @@ services:
   app:
     build: .
     ports:
-      - "${PORT:-8080}:8080"
+      - "8080:8080"
+    env_file:
+      - .env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-url_shortener}
       PORT: 8080

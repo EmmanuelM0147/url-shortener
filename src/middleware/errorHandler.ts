@@ -14,6 +14,14 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
       res.status(409).json({ error: 'Conflict' });
       return;
     }
+
+    if (err.code === '22001') {
+      res.status(400).json({
+        error: 'slug must be between 3 and 20 characters',
+        field: 'slug',
+      });
+      return;
+    }
   }
 
   res.status(500).json({ error: 'Internal server error' });

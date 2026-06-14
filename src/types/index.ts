@@ -1,21 +1,24 @@
 export interface Link {
-  id: string;
+  id: number;
   slug: string;
-  originalUrl: string;
-  createdAt: Date;
-  updatedAt: Date;
+  target_url: string;
+  created_at: Date;
+  expires_at: Date | null;
+  click_count: number;
 }
 
 export interface ClickEvent {
-  id: string;
-  linkId: string;
-  clickedAt: Date;
-  referrer: string | null;
-  userAgent: string | null;
+  id: number;
+  slug: string;
+  clicked_at: Date;
+  user_agent: string | null;
 }
 
-export interface ApiError {
-  statusCode: number;
-  message: string;
-  details?: unknown;
+export interface ValidationErrorResponse {
+  error: string;
+  field: string;
+}
+
+export interface ErrorResponse {
+  error: string;
 }
