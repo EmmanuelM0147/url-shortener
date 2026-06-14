@@ -12,7 +12,11 @@ A REST API that creates short links, redirects with click tracking, and exposes 
 
 ## Setup (local with Docker)
 
-1. Clone the repository.
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/EmmanuelM0147/url-shortener.git
+   cd url-shortener
+   ```
 2. Copy `.env.example` to `.env`:
    ```bash
    cp .env.example .env
