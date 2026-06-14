@@ -1,4 +1,4 @@
-# The app expects DATABASE_URL at runtime — no DB credentials are baked into this image.
+# The app expects DATABASE_URL at runtime. No DB credentials are baked into this image.
 
 FROM node:20-alpine AS builder
 

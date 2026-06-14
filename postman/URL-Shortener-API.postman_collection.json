@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     "name": "URL Shortener API",
-    "description": "Complete Postman collection for the quant-url-shortener REST API.\n\n**Base URL:** `{{baseUrl}}` (default: http://localhost:8080)\n\n**Workflow tip:** Run \"Create Link (auto slug)\" first — it saves the returned `slug` to the `{{slug}}` collection variable for redirect, analytics, and delete requests.",
+    "description": "Complete Postman collection for the quant-url-shortener REST API.\n\n**Base URL:** `{{baseUrl}}` (default: http://localhost:8080)\n\n**Workflow tip:** Run \"Create Link (auto slug)\" first - it saves the returned `slug` to the `{{slug}}` collection variable for redirect, analytics, and delete requests.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -216,7 +216,7 @@
           "name": "Validation & Errors",
           "item": [
             {
-              "name": "400 — Missing target_url",
+              "name": "400 - Missing target_url",
               "request": {
                 "method": "POST",
                 "header": [
@@ -261,7 +261,7 @@
               ]
             },
             {
-              "name": "400 — Invalid target_url",
+              "name": "400 - Invalid target_url",
               "request": {
                 "method": "POST",
                 "header": [
@@ -306,7 +306,7 @@
               ]
             },
             {
-              "name": "400 — Invalid slug characters",
+              "name": "400 - Invalid slug characters",
               "request": {
                 "method": "POST",
                 "header": [
@@ -351,7 +351,7 @@
               ]
             },
             {
-              "name": "409 — Duplicate slug",
+              "name": "409 - Duplicate slug",
               "request": {
                 "method": "POST",
                 "header": [
@@ -418,7 +418,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["{{slug}}"]
             },
-            "description": "Follows the 302 redirect to `target_url`. Increments `click_count` and inserts a `click_events` row.\n\nPostman follows redirects by default — the final response will be from the destination URL."
+            "description": "Follows the 302 redirect to `target_url`. Increments `click_count` and inserts a `click_events` row.\n\nPostman follows redirects by default - the final response will be from the destination URL."
           },
           "response": [],
           "event": [
@@ -475,7 +475,7 @@
           ]
         },
         {
-          "name": "404 — Unknown slug",
+          "name": "404 - Unknown slug",
           "request": {
             "method": "GET",
             "header": [],
@@ -551,7 +551,7 @@
           ]
         },
         {
-          "name": "404 — Analytics for unknown slug",
+          "name": "404 - Analytics for unknown slug",
           "request": {
             "method": "GET",
             "header": [],

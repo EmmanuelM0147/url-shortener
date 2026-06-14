@@ -110,8 +110,8 @@ Returns click stats for a link.
 Checks API and database connectivity.
 
 **Responses:**
-- `200` — `{ "status": "ok", "db": "connected", "uptime": <seconds> }`
-- `503` — `{ "status": "degraded", "db": "disconnected", "uptime": <seconds> }`
+- `200`: `{ "status": "ok", "db": "connected", "uptime": <seconds> }`
+- `503`: `{ "status": "degraded", "db": "disconnected", "uptime": <seconds> }`
 
 ### curl examples
 
